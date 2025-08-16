@@ -55,6 +55,8 @@ export interface MiddlewareOptions {
   publicKey?: string;
   autoEncrypt?: boolean;
   encryptedHeader?: string;
+  fieldEncryption?: boolean; // Enable field-level encryption
+  paddingFields?: number; // Number of padding fields for extra obfuscation
 }
 
 /**
@@ -63,4 +65,14 @@ export interface MiddlewareOptions {
 export interface FrontendDecryptOptions {
   key: string;
   algorithm?: string;
+}
+
+/**
+ * Field-level encryption result
+ */
+export interface FieldEncryptionResult {
+  [key: string]: string | boolean | number | undefined;
+  encrypted: true;
+  timestamp: string;
+  _mapping?: string; // Encrypted field mapping
 }

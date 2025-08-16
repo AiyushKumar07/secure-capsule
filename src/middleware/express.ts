@@ -21,13 +21,26 @@ export function createSecureMiddleware(options: MiddlewareOptions = {}) {
     res.json = function(obj: any) {
       if (options.autoEncrypt !== false) {
         try {
-          const encrypted = capsule.encrypt(obj);
+          let result;
+          
+          if (options.fieldEncryption && typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
+            // Use field-level encryption
+            if (options.paddingFields && options.paddingFields > 0) {
+              result = capsule.encryptFieldsWithPadding(obj, options.paddingFields);
+            } else {
+              result = capsule.encryptFields(obj);
+            }
+          } else {
+            // Use standard encryption
+            const encrypted = capsule.encrypt(obj);
+            result = { encrypted };
+          }
           
           // Set header to indicate encrypted content
           res.setHeader(options.encryptedHeader || 'X-Encrypted', 'true');
           res.setHeader('Content-Type', 'application/json');
           
-          return originalJson({ encrypted });
+          return originalJson(result);
         } catch (error) {
           console.error('Encryption error:', error);
           // Fallback to original response in case of encryption error
@@ -41,10 +54,24 @@ export function createSecureMiddleware(options: MiddlewareOptions = {}) {
     // Add secure method to response object
     (res as any).secure = function(obj: any) {
       try {
-        const encrypted = capsule.encrypt(obj);
+        let result;
+        
+        if (options.fieldEncryption && typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
+          // Use field-level encryption
+          if (options.paddingFields && options.paddingFields > 0) {
+            result = capsule.encryptFieldsWithPadding(obj, options.paddingFields);
+          } else {
+            result = capsule.encryptFields(obj);
+          }
+        } else {
+          // Use standard encryption
+          const encrypted = capsule.encrypt(obj);
+          result = { encrypted };
+        }
+        
         res.setHeader(options.encryptedHeader || 'X-Encrypted', 'true');
         res.setHeader('Content-Type', 'application/json');
-        return originalJson({ encrypted });
+        return originalJson(result);
       } catch (error) {
         console.error('Encryption error:', error);
         throw error;
@@ -91,9 +118,27 @@ export function createDecryptMiddleware(options: MiddlewareOptions = {}) {
     // Check if request has encrypted data
     const hasEncryptedHeader = req.get(options.encryptedHeader || 'X-Encrypted') === 'true';
     
-    if (hasEncryptedHeader && req.body && req.body.encrypted) {
+    if (hasEncryptedHeader && req.body) {
       try {
-        const decrypted = capsule.decrypt(req.body.encrypted);
+        let decrypted;
+        
+        // Check if it's field-level encryption (has encrypted: true field)
+        if (req.body.encrypted === true && req.body._mapping) {
+          // Field-level encryption
+          if (options.paddingFields && options.paddingFields > 0) {
+            decrypted = capsule.decryptFieldsIgnorePadding(req.body);
+          } else {
+            decrypted = capsule.decryptFields(req.body);
+          }
+        } else if (req.body.encrypted) {
+          // Standard encryption
+          decrypted = capsule.decrypt(req.body.encrypted);
+        } else {
+          // No encryption found, continue
+          next();
+          return;
+        }
+        
         req.body = decrypted;
       } catch (error) {
         console.error('Decryption error:', error);

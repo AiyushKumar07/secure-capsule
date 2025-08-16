@@ -7,6 +7,7 @@
 
 // Core exports
 export { SecureCapsule } from './core/SecureCapsule';
+export { FieldEncryption } from './core/FieldEncryption';
 
 // Type definitions
 export type {
@@ -17,6 +18,7 @@ export type {
   EnvironmentConfig,
   MiddlewareOptions,
   FrontendDecryptOptions,
+  FieldEncryptionResult,
 } from './types';
 
 // Utility functions

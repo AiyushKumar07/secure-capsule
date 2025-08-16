@@ -1,6 +1,6 @@
 {
   "name": "secure-capsule",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "description": "A universal encryption library for full-stack JavaScript that can secure entire API responses and individual values with minimal setup",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

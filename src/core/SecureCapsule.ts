@@ -13,12 +13,15 @@ import {
   decryptAsymmetricFromTransmission,
   generateKeyPair 
 } from '../asymmetric/rsa';
+import { FieldEncryption } from './FieldEncryption';
+import { FieldEncryptionResult } from '../types';
 
 /**
  * Main SecureCapsule class for encryption and decryption
  */
 export class SecureCapsule {
   private config: SecureCapsuleConfig;
+  private fieldEncryption: FieldEncryption;
   
   constructor(config?: Partial<SecureCapsuleConfig>) {
     // Load environment configuration
@@ -43,6 +46,9 @@ export class SecureCapsule {
     
     // Validate configuration
     this.validateConfig();
+    
+    // Initialize field encryption
+    this.fieldEncryption = new FieldEncryption(this);
   }
   
   /**
@@ -122,6 +128,34 @@ export class SecureCapsule {
     };
   }
   
+  /**
+   * Encrypt object with field-level encryption and obfuscated field names
+   */
+  encryptFields(data: Record<string, any>): FieldEncryptionResult {
+    return this.fieldEncryption.encryptFields(data);
+  }
+
+  /**
+   * Decrypt field-level encrypted object
+   */
+  decryptFields(encryptedData: FieldEncryptionResult): Record<string, any> {
+    return this.fieldEncryption.decryptFields(encryptedData);
+  }
+
+  /**
+   * Encrypt with additional padding fields for extra obfuscation
+   */
+  encryptFieldsWithPadding(data: Record<string, any>, paddingFields: number = 2): FieldEncryptionResult {
+    return this.fieldEncryption.encryptFieldsWithPadding(data, paddingFields);
+  }
+
+  /**
+   * Decrypt ignoring padding fields
+   */
+  decryptFieldsIgnorePadding(encryptedData: FieldEncryptionResult): Record<string, any> {
+    return this.fieldEncryption.decryptFieldsIgnorePadding(encryptedData);
+  }
+
   /**
    * Generate new RSA key pair (only for asymmetric mode)
    */

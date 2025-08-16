@@ -2,6 +2,11 @@
 
 A universal encryption library for full-stack JavaScript that can secure entire API responses and individual values with minimal setup.
 
+## ✨ New in v1.5.0
+- **Nested Field-Level Encryption**: Preserve object structure while encrypting individual fields
+- **Obfuscated Field Names**: Random field names at every nesting level for maximum security
+- **Express Middleware Enhancement**: Support for field-level encryption in API responses
+
 ## Features
 
 - **Universal**: Works in both Node.js (backend) and browsers (frontend)
@@ -31,12 +36,45 @@ const capsule = new SecureCapsule({
   secretKey: 'your-base64-encoded-secret-key'
 });
 
-// Encrypt data
+// Standard encryption (entire object)
 const encrypted = capsule.encrypt({ message: 'Hello, World!' });
-
-// Decrypt data
 const decrypted = capsule.decrypt(encrypted);
 console.log(decrypted); // { message: 'Hello, World!' }
+```
+
+### 🆕 Nested Field-Level Encryption (v1.5.0+)
+
+```javascript
+// Preserve structure while encrypting individual fields
+const data = {
+  user: {
+    name: 'John Doe',
+    email: 'john@example.com'
+  },
+  settings: {
+    theme: 'dark',
+    notifications: true
+  }
+};
+
+const fieldEncrypted = capsule.encryptFields(data);
+// Returns:
+// {
+//   "encrypted": true,
+//   "timestamp": "2025-08-15T...",
+//   "randomField1": {
+//     "obfuscatedName1": "encrypted_name",
+//     "obfuscatedName2": "encrypted_email"
+//   },
+//   "randomField2": {
+//     "obfuscatedName3": "encrypted_theme",
+//     "obfuscatedName4": "encrypted_notifications"
+//   },
+//   "_mapping": "encrypted_field_mapping"
+// }
+
+const fieldDecrypted = capsule.decryptFields(fieldEncrypted);
+console.log(fieldDecrypted); // Original nested structure restored
 ```
 
 ### Environment Configuration
@@ -94,16 +132,29 @@ import { createSecureMiddleware } from 'secure-capsule';
 
 const app = express();
 
-// Apply middleware globally
+// Standard encryption (entire response)
 app.use(createSecureMiddleware({
   mode: 'symmetric',
   secretKey: process.env.SECURE_KEY,
   autoEncrypt: true
 }));
 
+// 🆕 Field-level encryption (v1.5.0+)
+app.use(createSecureMiddleware({
+  mode: 'symmetric',
+  secretKey: process.env.SECURE_KEY,
+  fieldEncryption: true,    // Enable field-level encryption
+  paddingFields: 2,         // Add dummy fields for extra security
+  autoEncrypt: true
+}));
+
 app.get('/api/data', (req, res) => {
   // This response will be automatically encrypted
-  res.json({ sensitive: 'data' });
+  res.json({ 
+    user: { name: 'John', email: 'john@example.com' },
+    settings: { theme: 'dark' }
+  });
+  // With fieldEncryption: true, returns obfuscated field names
 });
 
 // Or use res.secure() for explicit encryption
